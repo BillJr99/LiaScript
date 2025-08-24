@@ -63,6 +63,7 @@ jobs:
           zip -r opal-build.zip LiaScript/dist/*
 
       - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/')
         id: create_release
         uses: actions/create-release@v1
         env:
@@ -74,6 +75,7 @@ jobs:
           prerelease: false
 
       - name: Upload ZIP Asset (PWA)
+        if: startsWith(github.ref, 'refs/tags/')
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -84,6 +86,7 @@ jobs:
           asset_content_type: application/zip
 
       - name: Upload ZIP Asset (Opal)
+        if: startsWith(github.ref, 'refs/tags/')
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -92,3 +95,23 @@ jobs:
           asset_path: opal-build.zip
           asset_name: opal-build.zip
           asset_content_type: application/zip
+
+      # --- Add Pages artifact upload (required for Pages) ---
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: LiaScript/dist
+
+  # --- Minimal Pages deploy job ---
+  deploy:
+    needs: liascript
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
